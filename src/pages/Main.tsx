@@ -134,7 +134,7 @@ export default function Main() {
                 <h2 className="text-3xl font-semibold">Time Entries</h2>
 
                 <div className="flex justify-content-between align-items-center gap-3">
-                    <Button label="Export" icon="pi pi-plus" onClick={() => exportRecords()}/>
+                    <Button label="Export" severity="secondary" icon="pi pi-file-export" onClick={() => exportRecords()}/>
                     <Button label="New Entry" icon="pi pi-plus" onClick={() => setShowDialog(true)}/>
                 </div>
             </div>
@@ -162,7 +162,7 @@ export default function Main() {
                 />
                 <Column
                     field="project"
-                    header="project"
+                    header="Project"
                     body={(r) => r.project}
                 />
                 <Column
