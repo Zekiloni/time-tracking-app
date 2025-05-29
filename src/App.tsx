@@ -4,6 +4,7 @@ import {useAuthStore} from "./core/user-store.ts";
 import {auth} from "./core/firebase.ts";
 import AppRouter from "./AppRouter.tsx";
 import {PrimeReactProvider} from "primereact/api";
+import {ProgressSpinner} from "primereact/progressspinner";
 
 function App() {
     const setUser = useAuthStore((state) => state.setUser);
@@ -16,7 +17,9 @@ function App() {
         });
     }, [setUser]);
 
-    if (loading) return <p>Loading...</p>;
+    if (loading) return <div className="flex align-items-center justify-content-center h-screen">
+        <ProgressSpinner />
+    </div>;
 
     return <PrimeReactProvider>
         <AppRouter/>
