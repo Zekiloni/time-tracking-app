@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {signOut} from "firebase/auth";
 import {auth} from "../core/firebase.ts";
 import {useAuthStore} from "../core/user-store.ts";
-import {createRecord, getRecordById, getRecords} from "../domain/record.service.ts";
+import {createRecord, deleteRecord, getRecordById, getRecords} from "../domain/record.service.ts";
 import {Button} from "primereact/button";
 import {DataTable} from "primereact/datatable";
 import {Column} from "primereact/column";
@@ -48,6 +48,18 @@ export default function Main() {
         }
     };
 
+    const handleDelete = async (recordId: string) => {
+        if (!user?.uid) return;
+
+        try {
+            await deleteRecord(recordId, user.uid);
+            setRecords((prev) => prev.filter((r) => r.id !== recordId));
+        } catch (err) {
+            console.error("Failed to delete record", err);
+            alert("Failed to delete record");
+        }
+    }
+
     useEffect(() => {
         const loadRecords = async () => {
             if (!user?.uid) return;
@@ -92,10 +104,16 @@ export default function Main() {
         loadRecords();
     }, [user?.uid]);
 
-    const actionTemplate = () => (
+    const actionTemplate = (rowData) => (
         <div className="flex gap-2 justify-center">
             <Button icon="pi pi-pencil" rounded text/>
-            <Button icon="pi pi-trash" severity="danger" rounded text/>
+            <Button
+                icon="pi pi-trash"
+                severity="danger"
+                rounded
+                text
+                onClick={() => handleDelete(rowData.id!)}
+            />
         </div>
     );
 
