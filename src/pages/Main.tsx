@@ -54,11 +54,39 @@ export default function Main() {
         try {
             await deleteRecord(recordId, user.uid);
             setRecords((prev) => prev.filter((r) => r.id !== recordId));
+            calculateTotals(records.filter((r) => r.id !== recordId));
         } catch (err) {
             console.error("Failed to delete record", err);
             alert("Failed to delete record");
         }
     }
+
+    const calculateTotals = (records: RecordModel[]) => {
+        const now = new Date();
+        let todayTotal = 0;
+        let weekTotal = 0;
+        let monthTotal = 0;
+
+        for (const r of records) {
+            const date = new Date(r.createdAt);
+            const durationMinutes = r.duration || 0;
+
+            if (date.toDateString() === now.toDateString()) todayTotal += durationMinutes;
+
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            if (date >= startOfWeek) weekTotal += durationMinutes;
+
+            if (date.getMonth() === now.getMonth()) monthTotal += durationMinutes;
+        }
+
+        const fmt = (m: number) => `${Math.floor(m / 60)}h ${m % 60}m`;
+        setTotals({
+            today: fmt(todayTotal),
+            week: fmt(weekTotal),
+            month: fmt(monthTotal),
+        });
+    };
 
     useEffect(() => {
         const loadRecords = async () => {
@@ -72,33 +100,6 @@ export default function Main() {
             } catch (err) {
                 console.error("Failed to load records", err);
             }
-        };
-
-        const calculateTotals = (records: RecordModel[]) => {
-            const now = new Date();
-            let todayTotal = 0;
-            let weekTotal = 0;
-            let monthTotal = 0;
-
-            for (const r of records) {
-                const date = new Date(r.createdAt);
-                const durationMinutes = r.duration || 0;
-
-                if (date.toDateString() === now.toDateString()) todayTotal += durationMinutes;
-
-                const startOfWeek = new Date(now);
-                startOfWeek.setDate(now.getDate() - now.getDay());
-                if (date >= startOfWeek) weekTotal += durationMinutes;
-
-                if (date.getMonth() === now.getMonth()) monthTotal += durationMinutes;
-            }
-
-            const fmt = (m: number) => `${Math.floor(m / 60)}h ${m % 60}m`;
-            setTotals({
-                today: fmt(todayTotal),
-                week: fmt(weekTotal),
-                month: fmt(monthTotal),
-            });
         };
 
         loadRecords();
