@@ -72,7 +72,7 @@ export default function CreateRecordDialog({visible, onHide, onSave}: Props) {
                 </span>
 
                 <span className="p-float-label">
-                    <Chips id="tags" value={tags} onChange={(e) => setTags(e.value)}/>
+                    <Chips id="tags" value={tags} onChange={(e) => setTags(e.value || [])}/>
                     <label htmlFor="tags">Tags</label>
                 </span>
 

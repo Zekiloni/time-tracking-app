@@ -115,7 +115,7 @@ export default function Main() {
         loadRecords();
     }, [user?.uid]);
 
-    const actionTemplate = (rowData) => (
+    const actionTemplate = (rowData: RecordModel) => (
         <div className="flex gap-2 justify-center">
             <Button icon="pi pi-pencil" rounded text/>
             <Button
@@ -170,7 +170,7 @@ export default function Main() {
                     header="Tags"
                     body={(r) => (
                         r.tags && r.tags.length > 0
-                            ? r.tags.map((tag, i) => <Chip key={i} label={tag} style={{marginRight: 4}}/>)
+                            ? r.tags.map((tag:string) => <Chip label={tag} style={{marginRight: 4}}/>)
                             : "-"
                     )}
                 />

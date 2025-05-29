@@ -19,8 +19,8 @@ export default function Auth() {
     const login = async () => {
         try {
             await signInWithEmailAndPassword(auth, email, password);
-        } catch (err) {
-            alert(err.message);
+        } catch (err: unknown) {
+            alert((err as Error).message);
         }
     };
 
@@ -28,16 +28,16 @@ export default function Auth() {
         try {
             await createUserWithEmailAndPassword(auth, email, password);
             alert("Registration successful! You can now log in.");
-        } catch (err) {
-            alert(err.message);
+        } catch (err: unknown) {
+            alert((err as Error).message);
         }
     };
 
     const loginWithGoogle = async () => {
         try {
             await signInWithPopup(auth, googleProvider);
-        } catch (err) {
-            console.error("Google Sign-In Error:", err);
+        } catch (err: unknown) {
+            console.error("Google Sign-In Error:", (err as Error));
             alert("Google login failed");
         }
     };

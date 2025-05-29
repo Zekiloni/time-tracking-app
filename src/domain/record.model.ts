@@ -1,5 +1,4 @@
-import firebase from "firebase/compat";
-import Timestamp = firebase.firestore.Timestamp;
+import type {Timestamp} from "firebase/firestore";
 
 
 export interface RecordFirestoreRaw {
