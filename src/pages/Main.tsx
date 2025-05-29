@@ -36,6 +36,7 @@ export default function Main() {
             }
 
             setRecords((prev) => [...prev, createdRecord]);
+            calculateTotals([...records, createdRecord]);
         }
     };
 
