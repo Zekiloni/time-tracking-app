@@ -11,6 +11,9 @@ import {format} from "date-fns";
 import type {RecordModel} from "../domain/record.model.ts";
 import CreateRecordDialog from "../components/CreateRecordDialog.tsx";
 import {Chip} from "primereact/chip";
+import {pdf} from "@react-pdf/renderer";
+import {saveAs} from "file-saver";
+import RecordPdf from "../components/RecordPdf.tsx";
 
 export default function Main() {
     const user = useAuthStore((state) => state.user);
@@ -89,6 +92,12 @@ export default function Main() {
         });
     };
 
+    const exportRecords = async () => {
+        const doc = <RecordPdf records={records} />;
+        const blob = await pdf(doc).toBlob();
+        saveAs(blob, 'records.pdf');
+    }
+
     useEffect(() => {
         const loadRecords = async () => {
             if (!user?.uid) return;
@@ -123,7 +132,11 @@ export default function Main() {
         <div className="p-6 max-w-screen-xl mx-auto">
             <div className="flex justify-content-between align-items-center mb-6">
                 <h2 className="text-3xl font-semibold">Time Entries</h2>
-                <Button label="New Entry" icon="pi pi-plus" onClick={() => setShowDialog(true)}/>
+
+                <div className="flex justify-content-between align-items-center gap-3">
+                    <Button label="Export" icon="pi pi-plus" onClick={() => exportRecords()}/>
+                    <Button label="New Entry" icon="pi pi-plus" onClick={() => setShowDialog(true)}/>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -157,7 +170,7 @@ export default function Main() {
                     header="Tags"
                     body={(r) => (
                         r.tags && r.tags.length > 0
-                            ? r.tags.map((tag, i) => <Chip key={i} label={tag} style={{ marginRight: 4 }} />)
+                            ? r.tags.map((tag, i) => <Chip key={i} label={tag} style={{marginRight: 4}}/>)
                             : "-"
                     )}
                 />
