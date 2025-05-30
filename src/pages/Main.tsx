@@ -1,4 +1,5 @@
 import {useEffect, useState} from "react";
+import * as React from "react";
 import {format} from "date-fns";
 import {saveAs} from "file-saver";
 import {signOut} from "firebase/auth";
@@ -19,7 +20,6 @@ import CreateRecordDialog from "../components/CreateRecordDialog.tsx";
 import {createRecord, deleteRecord, getRecordById, getRecords, updateRecord} from "../domain/record.service.ts";
 
 import RecordPdf from "../components/RecordPdf.tsx";
-import * as React from "react";
 
 
 export default function Main() {
