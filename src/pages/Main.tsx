@@ -1,22 +1,26 @@
 import {useEffect, useState} from "react";
-import {signOut} from "firebase/auth";
-import {auth} from "../core/firebase.ts";
-import {useAuthStore} from "../core/user-store.ts";
-import {createRecord, deleteRecord, getRecordById, getRecords, updateRecord} from "../domain/record.service.ts";
-import {Button} from "primereact/button";
-import {DataTable, type DataTableRowEditCompleteEvent} from "primereact/datatable";
-import {Column} from "primereact/column";
-import {Card} from "primereact/card";
 import {format} from "date-fns";
-import type {RecordModel} from "../domain/record.model.ts";
-import CreateRecordDialog from "../components/CreateRecordDialog.tsx";
-import {Chip} from "primereact/chip";
-import {pdf} from "@react-pdf/renderer";
 import {saveAs} from "file-saver";
-import RecordPdf from "../components/RecordPdf.tsx";
-import {InputText} from "primereact/inputtext";
+import {signOut} from "firebase/auth";
+import {Chip} from "primereact/chip";
+import {Card} from "primereact/card";
+import {type DocumentProps, pdf} from "@react-pdf/renderer";
+import {Button} from "primereact/button";
 import {Calendar} from "primereact/calendar";
 import {Chips} from "primereact/chips";
+import {InputText} from "primereact/inputtext";
+import {DataTable, type DataTableRowEditCompleteEvent} from "primereact/datatable";
+import {Column, type ColumnEditorOptions} from "primereact/column";
+
+import {auth} from "../core/firebase.ts";
+import {useAuthStore} from "../core/user-store.ts";
+import type {RecordModel} from "../domain/record.model.ts";
+import CreateRecordDialog from "../components/CreateRecordDialog.tsx";
+import {createRecord, deleteRecord, getRecordById, getRecords, updateRecord} from "../domain/record.service.ts";
+
+import RecordPdf from "../components/RecordPdf.tsx";
+import * as React from "react";
+
 
 export default function Main() {
     const user = useAuthStore((state) => state.user);
@@ -27,7 +31,7 @@ export default function Main() {
         month: "0h 0m",
     });
 
-    const [editingRows, setEditingRows] = useState({});
+    const [editingRows] = useState({});
     const [showDialog, setShowDialog] = useState(false);
 
     const handleCreate = async (record: Partial<RecordModel>) => {
@@ -98,7 +102,7 @@ export default function Main() {
 
     const exportRecords = async () => {
         const doc = <RecordPdf records={records}/>;
-        const blob = await pdf(doc).toBlob();
+        const blob = await pdf(doc as React.ReactElement<DocumentProps>).toBlob();
         saveAs(blob, 'records.pdf');
     }
 
@@ -129,26 +133,26 @@ export default function Main() {
         await onUpdate(updated);
     };
 
-    const textEditor = (options) => (
+    const textEditor = (options: ColumnEditorOptions) => (
         <InputText
             value={options.value}
-            onChange={(e) => options.editorCallback(e.target.value)}
+            onChange={(e) => options.editorCallback?.(e.target.value)}
         />
     );
 
-    const dateEditor = (options) => (
+    const dateEditor = (options: ColumnEditorOptions) => (
         <Calendar
             value={new Date(options.value)}
-            onChange={(e) => options.editorCallback(e.value)}
+            onChange={(e) => options.editorCallback?.(e.value)}
             showTime
             hourFormat="12"
         />
     );
 
-    const tagsEditor = (options) => (
+    const tagsEditor = (options: ColumnEditorOptions) => (
         <Chips
             value={options.value || []}
-            onChange={(e) => options.editorCallback(e.value || [])}
+            onChange={(e) => options.editorCallback?.(e.value || [])}
         />
     );
 
@@ -169,15 +173,12 @@ export default function Main() {
         loadRecords();
     }, [user?.uid]);
 
-    const actionTemplate = (rowData, options) => (
+    const actionTemplate = (rowData: RecordModel) => (
         <div className="flex gap-2">
-            <Button icon="pi pi-trash" rounded severity="danger" onClick={() => onDelete(rowData.id)}/>
+            <Button icon="pi pi-trash" rounded severity="danger" onClick={() => onDelete(rowData.id!)}/>
         </div>
     );
 
-    const allowEdit = (rowData: RecordModel) => {
-        ret
-    };
 
     return (
         <div className="p-6 max-w-screen-xl mx-auto">
