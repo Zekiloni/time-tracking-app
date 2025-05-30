@@ -56,7 +56,8 @@ export const updateRecord = async (
     updatedData: Partial<RecordModel>
 ) => {
     const recordRef = doc(db, "users", userId, "records", recordId);
-    return updateDoc(recordRef, updatedData);
+    await updateDoc(recordRef, updatedData);
+    return getRecordById(userId, recordId);
 };
 
 export const deleteRecord = async (recordId: string, userId: string) => {

@@ -2,9 +2,9 @@ import {useEffect, useState} from "react";
 import {signOut} from "firebase/auth";
 import {auth} from "../core/firebase.ts";
 import {useAuthStore} from "../core/user-store.ts";
-import {createRecord, deleteRecord, getRecordById, getRecords} from "../domain/record.service.ts";
+import {createRecord, deleteRecord, getRecordById, getRecords, updateRecord} from "../domain/record.service.ts";
 import {Button} from "primereact/button";
-import {DataTable} from "primereact/datatable";
+import {DataTable, type DataTableRowEditCompleteEvent} from "primereact/datatable";
 import {Column} from "primereact/column";
 import {Card} from "primereact/card";
 import {format} from "date-fns";
@@ -14,6 +14,9 @@ import {Chip} from "primereact/chip";
 import {pdf} from "@react-pdf/renderer";
 import {saveAs} from "file-saver";
 import RecordPdf from "../components/RecordPdf.tsx";
+import {InputText} from "primereact/inputtext";
+import {Calendar} from "primereact/calendar";
+import {Chips} from "primereact/chips";
 
 export default function Main() {
     const user = useAuthStore((state) => state.user);
@@ -24,6 +27,7 @@ export default function Main() {
         month: "0h 0m",
     });
 
+    const [editingRows, setEditingRows] = useState({});
     const [showDialog, setShowDialog] = useState(false);
 
     const handleCreate = async (record: Partial<RecordModel>) => {
@@ -52,7 +56,7 @@ export default function Main() {
         }
     };
 
-    const handleDelete = async (recordId: string) => {
+    const onDelete = async (recordId: string) => {
         if (!user?.uid) return;
 
         try {
@@ -93,10 +97,60 @@ export default function Main() {
     };
 
     const exportRecords = async () => {
-        const doc = <RecordPdf records={records} />;
+        const doc = <RecordPdf records={records}/>;
         const blob = await pdf(doc).toBlob();
         saveAs(blob, 'records.pdf');
     }
+
+    const onUpdate = async (record: RecordModel) => {
+        if (!user?.uid) return;
+        const newVar = await updateRecord(record.id!, user.uid, record);
+        if (!newVar) {
+            console.error("Failed to update record");
+            return;
+        }
+
+        setRecords((prev) =>
+            prev.map((r) => (r.id === record.id ? newVar : r))
+        );
+
+        calculateTotals(records);
+    }
+
+    const onRowEditComplete = async (e: DataTableRowEditCompleteEvent) => {
+        console.log(e)
+        const updated = e.newData as RecordModel;
+
+        if (updated.startTime && updated.endTime) {
+            const diff = (new Date(updated.endTime).getTime() - new Date(updated.startTime).getTime()) / 1000 / 60;
+            updated.duration = diff > 0 ? Math.round(diff) : 0;
+        }
+
+        await onUpdate(updated);
+    };
+
+    const textEditor = (options) => (
+        <InputText
+            value={options.value}
+            onChange={(e) => options.editorCallback(e.target.value)}
+        />
+    );
+
+    const dateEditor = (options) => (
+        <Calendar
+            value={new Date(options.value)}
+            onChange={(e) => options.editorCallback(e.value)}
+            showTime
+            hourFormat="12"
+        />
+    );
+
+    const tagsEditor = (options) => (
+        <Chips
+            value={options.value || []}
+            onChange={(e) => options.editorCallback(e.value || [])}
+        />
+    );
 
     useEffect(() => {
         const loadRecords = async () => {
@@ -115,18 +169,15 @@ export default function Main() {
         loadRecords();
     }, [user?.uid]);
 
-    const actionTemplate = (rowData: RecordModel) => (
-        <div className="flex gap-2 justify-center">
-            <Button icon="pi pi-pencil" rounded text/>
-            <Button
-                icon="pi pi-trash"
-                severity="danger"
-                rounded
-                text
-                onClick={() => handleDelete(rowData.id!)}
-            />
+    const actionTemplate = (rowData, options) => (
+        <div className="flex gap-2">
+            <Button icon="pi pi-trash" rounded severity="danger" onClick={() => onDelete(rowData.id)}/>
         </div>
     );
+
+    const allowEdit = (rowData: RecordModel) => {
+        ret
+    };
 
     return (
         <div className="p-6 max-w-screen-xl mx-auto">
@@ -134,7 +185,8 @@ export default function Main() {
                 <h2 className="text-3xl font-semibold">Time Entries</h2>
 
                 <div className="flex justify-content-between align-items-center gap-3">
-                    <Button label="Export" severity="secondary" icon="pi pi-file-export" onClick={() => exportRecords()}/>
+                    <Button label="Export" severity="secondary" icon="pi pi-file-export"
+                            onClick={() => exportRecords()}/>
                     <Button label="New Entry" icon="pi pi-plus" onClick={() => setShowDialog(true)}/>
                 </div>
             </div>
@@ -154,49 +206,59 @@ export default function Main() {
                 </Card>
             </div>
 
-            <DataTable value={records} className="shadow-md rounded-md" scrollable scrollHeight="400px">
+            <DataTable
+                value={records}
+                className="shadow-md rounded-md"
+                scrollable
+                scrollHeight="400px"
+                editMode="row"
+                dataKey="id"
+                editingRows={editingRows}
+                onRowEditComplete={onRowEditComplete}
+            >
                 <Column
                     field="createdAt"
-                    header="Date"
+                    header="Creation Date"
                     body={(r) => format(new Date(r.createdAt), "yyyy-MM-dd")}
                 />
-                <Column
-                    field="project"
-                    header="Project"
-                    body={(r) => r.project}
-                />
+                <Column field="project" header="Project" editor={textEditor}/>
                 <Column
                     field="tags"
                     header="Tags"
-                    body={(r) => (
+                    body={(r) =>
                         r.tags && r.tags.length > 0
-                            ? r.tags.map((tag:string) => <Chip label={tag} style={{marginRight: 4}}/>)
+                            ? r.tags.map((tag: string, i: number) => <Chip key={i} label={tag}
+                                                                           style={{marginRight: 4}}/>)
                             : "-"
-                    )}
+                    }
+                    editor={tagsEditor}
                 />
-                <Column
-                    field="description"
-                    header="Description"
-                    body={(r) => r.description || "-"}
-                />
+                <Column field="description" header="Description" editor={textEditor}/>
                 <Column
                     field="startTime"
                     header="Start Time"
-                    body={(r) => format(new Date(r.startTime), "HH:mm")}
+                    body={(r) => format(new Date(r.startTime), "yyyy-MM-dd @ HH:mm")}
+                    editor={dateEditor}
                 />
                 <Column
                     field="endTime"
                     header="End Time"
-                    body={(r) => format(new Date(r.endTime), "HH:mm")}
+                    body={(r) => format(new Date(r.endTime), "yyyy-MM-dd @ HH:mm")}
+                    editor={dateEditor}
                 />
                 <Column
                     field="duration"
                     header="Duration"
                     body={(r) => `${Math.floor(r.duration / 60)}h ${r.duration % 60}m`}
                 />
+                <Column rowEditor={true} headerStyle={{width: '10%', minWidth: '8rem'}}
+                        bodyStyle={{textAlign: 'center'}}></Column>
+
                 <Column
+                    rowEditor
                     header="Actions"
                     body={actionTemplate}
+                    style={{width: '12rem'}}
                 />
             </DataTable>
 
